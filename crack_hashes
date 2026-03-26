@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+import hashlib
+import sys
+import re
+
+#SHA512( SHA512( ( SHA256( SHA256( ( MD5( MD5( ( " string" )  ... )
+
+
+#------------- STEP 1-  Custom Hash Function Implementation ---------------------------------------
+# #HASHMODE: python custom_hash.py <password>
+
+def custom_hash(password):
+    # UTF-8 encode the input string
+    data = password.encode('utf-8')
+
+    # 100 rounds of MD5 
+    for _ in range(100):
+        data = hashlib.md5(data).digest()
+
+    # 100 rounds of SHA256 
+    for _ in range(100):
+        data = hashlib.sha256(data).digest()
+
+    # 100 rounds of SHA512
+    for _ in range(100):
+        data = hashlib.sha512(data).digest()
+    # Return final result as hexadecimal string
+    return data.hex()
+
+#----------------- STEP 2-  Read the wordlist and check each word against the target hash ---------------------------------------
+#CRACKMODE: python custom_hash.py <hash> <wordlist>
+
+def crack(target_hash, wordlist_file):
+    with open(wordlist_file, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            word = line.strip()
+            # Only try 6-character alphanumeric words using regex to ensure we only check valid candidates
+            if len(word) == 6 and re.fullmatch(r'[A-Za-z0-9]+', word):
+                if custom_hash(word) == target_hash:
+                    print(f"Password found: {word}")
+                    return
+    print("Password not found in wordlist.")
+
+#----------------- STEP 3-  Main function to run the script with command line arguments ---------------------------------------
+if __name__ == "__main__":
+    
+    #HASHMODE - i
+    if len(sys.argv) == 2: #how does this work? - if there are 2 arguments, the first is the script name and the second is the password to hash
+        
+        # Hash mode: python custom_hash.py <password>
+        # #sys.argv[1] is the password to hash, and we print the resulting hash to the console
+        print(custom_hash(sys.argv[1])) 
+        
+    #CRACKMODE- i
+    
+    elif len(sys.argv) == 3: 
+        
+        # Crack mode: python custom_hash.py <hash> <wordlist>
+        # sys.argv[1] is the target hash to crack, and sys.argv[2] is the wordlist file to use for cracking.
+        crack(sys.argv[1], sys.argv[2]) 
+    else:
+        print("Usage:")
+        print("  Hash a password:  python custom_hash.py <password>")
+        print("  Crack a hash:     python custom_hash.py <hash> <wordlist>")
+        sys.exit(1)
+
